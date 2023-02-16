@@ -91,6 +91,24 @@ ggplot(data = staff_full, aes(x = year, y = value, group = full_time, color = fu
 
 ### Exercise 3
 
-…
+``` r
+fisheries <- read_csv("data/fisheries.csv")
+```
 
-Add exercise headings as needed.
+    ## Rows: 216 Columns: 4
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## Delimiter: ","
+    ## chr (1): country
+    ## dbl (3): capture, aquaculture, total
+    ## 
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
+``` r
+fisheries %>%
+  filter(total > 100000)%>%
+ggplot(aes(x = fct_reorder(country, total), y = total))+
+  geom_bar(stat = "identity")
+```
+
+![](lab-06_files/figure-gfm/doin-stuff-1.png)<!-- -->

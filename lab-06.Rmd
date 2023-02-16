@@ -72,6 +72,11 @@ ggplot(data = staff_full, aes(x = year, y = value, group = full_time, color = fu
 
 ### Exercise 3
 
-...
+```{r doin-stuff}
+fisheries <- read_csv("data/fisheries.csv")
 
-Add exercise headings as needed.
+fisheries %>%
+  filter(total > 100000)%>%
+ggplot(aes(x = fct_reorder(country, total), y = total))+
+  geom_bar(stat = "identity")
+```
