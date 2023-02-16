@@ -65,10 +65,26 @@ staff_long %>%
 ### Exercise 2
 
 ``` r
-ggplot(staff_long, aes(fill = faculty_type, x = year, y = value))+
-  geom_bar(stat = "identity", position = "dodge")+
+staff_long <-  staff_long %>%
+  mutate(full_time = case_when(
+    faculty_type == "Part-Time Faculty" ~ "Part-Time Faculty",
+    faculty_type == "Graduate Student Employees" ~ "Graduate Student Employees",
+    faculty_type %in% c("Full-Time Tenured Faculty", "Full-Time Tenure-Track Faculty", "Full-Time Non-Tenure-Track Faculty") ~ "Full-Time Faculty"))
+
+staff_full <- aggregate(value ~ year + full_time, data = staff_long, FUN = sum)
+```
+
+``` r
+ggplot(data = staff_full, aes(x = year, y = value, group = full_time, color = full_time))+
+  geom_line(size = 1.1)+
+  geom_point(aes(shape = full_time), size = 1.75)+
   theme_bw()+
-  scale_fill_manual(values = c("Full-Time Non-Tenure-Track Faculty" = "grey", "Full-Time Tenure-Track Faculty" = "grey", "Full-Time Tenured Faculty" = "grey", "Graduate Student Employees" = "grey", "Part-Time Faculty" = "red"))
+  scale_color_manual(values = c("Full-Time Faculty" = "gray50", "Graduate Student Employees" = "gray80", "Part-Time Faculty" = "orange"))+
+  labs(title = "Trends in faculty hires (1975 - 2011)",
+       y = "Percentage of faculty hires",
+       x = "Year",
+       color = "Faculty type",
+       shape = "Faculty type")
 ```
 
 ![](lab-06_files/figure-gfm/making-new-plot-1.png)<!-- -->
