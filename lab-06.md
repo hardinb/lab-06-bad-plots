@@ -152,18 +152,12 @@ fish_long %>%
     country == "China" ~ "China",
     country == "Indonesia" ~ "Indonesia",
     country == "India" ~ "India",
-    !country %in% c("China", "India", "Indonesia") ~ "Other")) %>%
+    country == "Vietnam" ~ "Vietnam",
+    country == "United States" ~ "United States",
+    country == "Russia" ~ "Russia",
+    !country %in% c("China", "India", "Indonesia", "Vietnam", "United States", "Russia") ~ "Other")) %>%
   ggplot(aes(x = type, y = value, fill = fct_reorder(new_country, total)))+
   geom_bar(stat = "identity")
 ```
 
 ![](lab-06_files/figure-gfm/try-something-better-1.png)<!-- -->
-
-``` r
-fish_long %>%
-  filter(!country %in% c("China", "India", "Indonesia"), total > 1000000)%>%
-  ggplot(aes(x = type, y = value, fill = fct_reorder(country, total)))+
-  geom_bar(stat = "identity")
-```
-
-![](lab-06_files/figure-gfm/try-something-better-2.png)<!-- -->
