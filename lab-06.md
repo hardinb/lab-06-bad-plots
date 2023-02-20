@@ -44,6 +44,9 @@ staff_long
 
 ### Exercise 1
 
+Here is a new graph displaying how the proportion of different faculty
+types making up new hires has changed over time.
+
 ``` r
 staff_long %>%
   ggplot(aes(x = year, y = value, group = faculty_type, color = faculty_type))+
@@ -63,6 +66,20 @@ staff_long %>%
 ![](lab-06_files/figure-gfm/making-first-plot-1.png)<!-- -->
 
 ### Exercise 2
+
+I do think the plot does an ok job displaying how the proportion of
+part-time faculty has increased dramatically compared to other
+instructors, but this piece of information is obscured a little bit by
+the amount of things happening in the plot, and that they are all about
+equally prominent in the graph. For that reason, I want to propose
+making 2 changes to the plot.
+
+1.  Combining all full-time faculty into 1 category, so that we are only
+    comparing 3 kinds of instructor types and not cluttering the graph
+    quite so much.
+2.  Making the line for part-time faculty brighter and more colorful
+    than the other lines, so that our attention is drawn to the
+    instructor type that we are most interested in learning about.
 
 ``` r
 staff_long <-  staff_long %>%
@@ -89,6 +106,12 @@ ggplot(data = staff_full, aes(x = year, y = value, group = full_time, color = fu
 
 ![](lab-06_files/figure-gfm/making-new-plot-1.png)<!-- -->
 
+I’m pretty pleased with the result! In particular, it highlights
+something pretty striking that would have been really hard to deduce
+from the previous graph – that since 2007, the proportion of part-time
+faculty hires has actually exceeded the proportion of all full-time
+faculty types combined! :0
+
 ### Exercise 3
 
 ``` r
@@ -106,9 +129,41 @@ fisheries <- read_csv("data/fisheries.csv")
 
 ``` r
 fisheries %>%
+  mutate(new_total = total/1000000) %>%
   filter(total > 100000)%>%
-ggplot(aes(x = fct_reorder(country, total), y = total))+
+ggplot(aes(x = new_total))+
+  geom_histogram(binwidth = 1, color = "black", fill = "blue")+
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 25))+
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 82))+
+  theme_bw()
+```
+
+    ## Warning: Removed 2 rows containing missing values (`geom_bar()`).
+
+![](lab-06_files/figure-gfm/doin-stuff-1.png)<!-- -->
+
+``` r
+fish_long <- fisheries %>%
+  pivot_longer(cols = c(-total, -country), names_to = "type") %>%
+  mutate(value = as.numeric(value))
+
+fish_long %>%
+  mutate(new_country = case_when(
+    country == "China" ~ "China",
+    country == "Indonesia" ~ "Indonesia",
+    country == "India" ~ "India",
+    !country %in% c("China", "India", "Indonesia") ~ "Other")) %>%
+  ggplot(aes(x = type, y = value, fill = fct_reorder(new_country, total)))+
   geom_bar(stat = "identity")
 ```
 
-![](lab-06_files/figure-gfm/doin-stuff-1.png)<!-- -->
+![](lab-06_files/figure-gfm/try-something-better-1.png)<!-- -->
+
+``` r
+fish_long %>%
+  filter(!country %in% c("China", "India", "Indonesia"), total > 1000000)%>%
+  ggplot(aes(x = type, y = value, fill = fct_reorder(country, total)))+
+  geom_bar(stat = "identity")
+```
+
+![](lab-06_files/figure-gfm/try-something-better-2.png)<!-- -->
