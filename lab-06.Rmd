@@ -80,6 +80,8 @@ I'm pretty pleased with the result! In particular, it highlights something prett
 
 ### Exercise 3
 
+Now it's time to figure out a better way of representing this fisheries data. My first thought is that a histogram just showing the distribution of fish production per country might be useful. This shows that there are 3 countries that are pretty significant outliers, while most countries are producing 1 million tons or less. Not bad, but we can probably do better.
+
 ```{r doin-stuff}
 fisheries <- read_csv("data/fisheries.csv")
 
@@ -90,12 +92,21 @@ ggplot(aes(x = new_total))+
   geom_histogram(binwidth = 1, color = "black", fill = "blue")+
   scale_y_continuous(expand = c(0, 0), limits = c(0, 25))+
   scale_x_continuous(expand = c(0, 0), limits = c(0, 82))+
-  theme_bw()
+  theme_bw()+
+  labs(title = "Distribution of total fish production per country",
+       y = "Number of countries",
+       x = "Fish production (in million tons)")
 ```
+
+Since the author of the original visualization only included 6 countries in the legend of their plot (China, Indonesia, Vietnam, India, the United States, and Russia), I'm going to start by assuming that those are the primary countries of interest. Let's try to improve on the pie chart by representing the portion of total fish production accounted for by each of these 6 countries, as well as all other countries with a stacked bar chart. We can get some pretty neat information from this plot! For example, we can see that China accounts for more of the total aquaculture than all other countries combined! However, countries that aren't included in this plot have more of a stronghold the amount of fish production coming from capture. Let's generate a second, complimentary plot to learn more about other major fish producing countries.
+
+The second plot shows a similar stacked bar for other countries that produce at least 1 million tons of fish. One striking thing is that, when we take out the major aquaculture countries that are producing tens of millions of tons of fish, the majority of fish are now produced through capture. It looks like Japan, the Phillipines, and Bangladesh are noteworthy producers of fish, with a number of other countries also taking up sizeable chunks of the fish market.
+
 ```{r try-something-better}
 fish_long <- fisheries %>%
   pivot_longer(cols = c(-total, -country), names_to = "type") %>%
-  mutate(value = as.numeric(value))
+  mutate(value = as.numeric(value))%>%
+  mutate(new_value = value/1000000)
 
 fish_long %>%
   mutate(new_country = case_when(
@@ -106,20 +117,50 @@ fish_long %>%
     country == "United States" ~ "United States",
     country == "Russia" ~ "Russia",
     !country %in% c("China", "India", "Indonesia", "Vietnam", "United States", "Russia") ~ "Other")) %>%
-  ggplot(aes(x = type, y = value, fill = fct_reorder(new_country, total)))+
-  geom_bar(stat = "identity")
+  ggplot(aes(x = type, y = new_value, fill = fct_reorder(new_country, total)))+
+  geom_bar(stat = "identity")+
+  scale_y_continuous(
+    expand = c(0, 0),
+    limits = c(0, 115))+
+  scale_fill_viridis_d()+
+  theme_bw()+
+  labs(title = "Fish production in 6 major fish countries",
+       y = "Fish production (in million tons)",
+       x = "Source",
+       fill = "Country")
 
 fish_long %>%
   filter(!country %in% c("China", "India", "Indonesia", "Vietnam", "United States", "Russia"), total > 1000000) %>%
-  ggplot(aes(x = type, y = value, fill = fct_reorder(country, value)))+
-  geom_bar(stat = "identity")
+  ggplot(aes(x = type, y = new_value, fill = fct_reorder(country, value)))+
+  geom_bar(stat = "identity")+
+  scale_y_continuous(
+    expand = c(0, 0),
+    limits = c(0, 35))+
+  scale_fill_viridis_d()+
+  theme_bw()+
+  labs(title = "Fish production in other major fish countries",
+       y = "Fish production (in million tons)",
+       x = "Source",
+       fill = "Country")
 ```
 
-```{r one-last-plot}
+I want to try one more plot that I think might do a nice job of telling the whole fish production story. This graph shows all the information from the two barplots before all at once. Mainly, what this plot shows is that there are a couple countries producing an enourmous amount of fish, largely through aquaculture, as well as lots of other countries producing sizeable, but relatively small amounts of fish, largely through capture.
+
+```{r one-last-plot, fig.height = 3, fig.width = 6}
 fish_long %>%
   filter(total > 1000000) %>%
-  ggplot(aes(x = fct_reorder(country, value), fill = type, y = value))+
-  geom_bar(stat = "identity")
+  ggplot(aes(x = fct_reorder(country, value), fill = type, y = new_value))+
+  geom_bar(stat = "identity")+
+  scale_y_continuous(
+    expand = c(0, 0),
+    limits = c(0, 84))+
+  scale_fill_viridis_d()+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = -40, hjust = -0.05))+
+  labs(title = "Fish production in countries producing at least 1 million tons of fish",
+       x = "Country",
+       y = "Fish production (in million tons)",
+       fill = "Source")
 ```
 
 ### Stretch Exercises
@@ -130,7 +171,7 @@ data(Whickham)
 ```
 ### Exercise 1
 
-The data is most likely observational, because it is described as a survey conducted at 2 time points, and also because the IV is whether someone is a smoker. Given the health risks involved in smoking, it is unlikely that the researchers would have randomly assigned people to become smokers for 20 years, which would be extremely unethical.
+The data is most likely observational, because it is described as a survey conducted at 2 time points, and also because the IV is whether someone is a smoker. Given the health risks involved in smoking, it is unlikely that the researchers would have wanted to, or have been ethically permitted to, randomly assigned people to become smokers for 20 years.
 
 ### Exercise 2
 
@@ -146,13 +187,34 @@ There are 3 variables in the dataset, which represent:
 
 ```{r viz-vars}
 ggplot(Whickham, aes(x = outcome))+
-  geom_bar()
+  geom_bar()+
+  theme_bw()+
+  scale_y_continuous(
+    expand = c(0, 0),
+    limits = c(0, 1000))+
+  labs(title = "Mortality of participants at Time 2",
+       x = "Outcome",
+       y = "Count")
 
 ggplot(Whickham, aes(x = smoker))+
-  geom_bar()
+  geom_bar()+
+  theme_bw()+
+  scale_y_continuous(
+    expand = c(0, 0),
+    limits = c(0, 800))+
+  labs(title = "Smoking status of participants at Time 1",
+       x = "Do you smoke?",
+       y = "Count")
 
 ggplot(Whickham, aes(x = age))+
-  geom_histogram(color = "black", fill = "grey80")
+  geom_histogram(color = "black", fill = "grey80")+
+  theme_bw()+
+  scale_y_continuous(
+    expand = c(0, 0),
+    limits = c(0, 100))+
+  labs(title = "Distribution of ages at Time 1",
+       x = "Age",
+       y = "Frequency")
 ```
 
 ### Exercise 4
@@ -165,7 +227,13 @@ Based on the visualization, people who reported being smokers at time 1 don't se
 
 ```{r viz-results}
 ggplot(Whickham, aes(x = smoker, fill = outcome))+
-  geom_bar(position = "fill")
+  geom_bar(position = "fill", color = "black")+
+  scale_fill_manual(values = c("grey75", "black"))+
+  theme_bw()+
+  labs(title = "Probability of mortality by smoker status",
+       fill = "Mortality",
+       x = "Smoker status",
+       y = "Probability")
 ```
 
 ```{r condit-prob}
@@ -192,7 +260,13 @@ Not too surprisingly, the likelihood of mortality was much higher for people who
 ```{r unraveling-age}
 ggplot(Whickham, aes(x = smoker, fill = outcome))+
   facet_wrap(~ age_cat)+
-  geom_bar()
+  geom_bar(color = "black")+
+  scale_fill_manual(values = c("grey75", "black"))+
+  theme_bw()+
+  labs(title = "Relationship between mortality and smoker status by age",
+       fill = "Mortality",
+       x = "Smoker status",
+       y = "Frequency")
 
 Whickham %>%
   count(smoker, outcome, age_cat) %>%
