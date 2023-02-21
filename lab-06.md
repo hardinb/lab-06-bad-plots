@@ -161,3 +161,161 @@ fish_long %>%
 ```
 
 ![](lab-06_files/figure-gfm/try-something-better-1.png)<!-- -->
+
+``` r
+fish_long %>%
+  filter(!country %in% c("China", "India", "Indonesia", "Vietnam", "United States", "Russia"), total > 1000000) %>%
+  ggplot(aes(x = type, y = value, fill = fct_reorder(country, value)))+
+  geom_bar(stat = "identity")
+```
+
+![](lab-06_files/figure-gfm/try-something-better-2.png)<!-- -->
+
+``` r
+fish_long %>%
+  filter(total > 1000000) %>%
+  ggplot(aes(x = fct_reorder(country, value), fill = type, y = value))+
+  geom_bar(stat = "identity")
+```
+
+![](lab-06_files/figure-gfm/one-last-plot-1.png)<!-- -->
+
+### Stretch Exercises
+
+``` r
+library(mosaicData)
+
+data(Whickham)
+```
+
+### Exercise 1
+
+The data is most likely observational, because it is described as a
+survey conducted at 2 time points, and also because the IV is whether
+someone is a smoker. Given the health risks involved in smoking, it is
+unlikely that the researchers would have randomly assigned people to
+become smokers for 20 years, which would be extremely unethical.
+
+### Exercise 2
+
+There are 1314 observations in the dataset, each of which represents a
+woman in the town of Whickham.
+
+### Exercise 3
+
+There are 3 variables in the dataset, which represent:
+
+1.  Whether the participant was still alive 20 years after the initial
+    survey (dichotomous)
+2.  The participants smoker status at the time of the initial survey
+    (dichotomous)
+3.  The participants age at the time of the initial survey (continuous)
+
+``` r
+ggplot(Whickham, aes(x = outcome))+
+  geom_bar()
+```
+
+![](lab-06_files/figure-gfm/viz-vars-1.png)<!-- -->
+
+``` r
+ggplot(Whickham, aes(x = smoker))+
+  geom_bar()
+```
+
+![](lab-06_files/figure-gfm/viz-vars-2.png)<!-- -->
+
+``` r
+ggplot(Whickham, aes(x = age))+
+  geom_histogram(color = "black", fill = "grey80")
+```
+
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](lab-06_files/figure-gfm/viz-vars-3.png)<!-- -->
+
+### Exercise 4
+
+My expectation would be that smoking would be associated with worse
+health outcomes. In this case, that would mean greater or earlier
+mortality among smokers.
+
+### Exercise 5
+
+Based on the visualization, people who reported being smokers at time 1
+don’t seem to differ much from people who reported not being smokers in
+terms of their likelihood of surviving to time 2. The conditional
+probabilities reveal that, apparently contrary to my prediction, smokers
+were descriptively less likely to have died by time 2 than non-smokers.
+
+``` r
+ggplot(Whickham, aes(x = smoker, fill = outcome))+
+  geom_bar(position = "fill")
+```
+
+![](lab-06_files/figure-gfm/viz-results-1.png)<!-- -->
+
+``` r
+Whickham %>%
+  count(smoker, outcome) %>%
+  group_by(smoker) %>%
+  mutate(prob_dead = n/sum(n))
+```
+
+    ## # A tibble: 4 × 4
+    ## # Groups:   smoker [2]
+    ##   smoker outcome     n prob_dead
+    ##   <fct>  <fct>   <int>     <dbl>
+    ## 1 No     Alive     502     0.686
+    ## 2 No     Dead      230     0.314
+    ## 3 Yes    Alive     443     0.761
+    ## 4 Yes    Dead      139     0.239
+
+### Exercise 6
+
+``` r
+Whickham <- Whickham %>%
+  mutate(age_cat = case_when(
+    age <= 44 ~ "18 - 44",
+    age > 44 & age <= 64 ~ "45 - 64",
+    age > 64 ~ "65+"))
+```
+
+### Exercise 7
+
+Not too surprisingly, the likelihood of mortality was much higher for
+people who were 65 and above at time 1, and much lower for people
+between 18-44. For younger people, the those who were smokers were
+somewhat more likely to have died by time 2 than non-smokers. For 65 and
+older people, if we were to only focus on comparing the “dead” columns,
+it would look like more non-smokers than smokers are dying. However,
+when we compare the size of the bars, we can see that very few smokers
+above the age of 65 were ever surveyed, and a higher proportion of them
+died compared to non-smokers over 65. The original plot was misleading
+about the effect, because a majority of 65+ individuals died regardless
+of their smoker status and there weren’t very many 65+ smokers available
+to sample in the first place. Combining all the age categories together
+masked these nuances of the data. This is an example of Simpson’s
+paradox.
+
+``` r
+ggplot(Whickham, aes(x = smoker, fill = outcome))+
+  facet_wrap(~ age_cat)+
+  geom_bar()
+```
+
+![](lab-06_files/figure-gfm/unraveling-age-1.png)<!-- -->
+
+``` r
+Whickham %>%
+  count(smoker, outcome, age_cat) %>%
+  pivot_wider(names_from = age_cat, values_from = n)
+```
+
+    ## # A tibble: 4 × 5
+    ##   smoker outcome `18 - 44` `45 - 64` `65+`
+    ##   <fct>  <fct>       <int>     <int> <int>
+    ## 1 No     Alive         327       147    28
+    ## 2 No     Dead           12        53   165
+    ## 3 Yes    Alive         270       167     6
+    ## 4 Yes    Dead           15        80    44
